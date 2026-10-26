@@ -1,0 +1,34 @@
+# Environments & Secrets
+.env
+.env*
+*.env
+client/.env
+client/.env*
+server/.env
+server/.env*
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production Build
+dist/
+client/dist/
+
+# Logs & Temp
+*.log
+npm-debug.log*
+server/public/*
+!server/public/.gitkeep
+
+# OS / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+#markdown files
+PROBLEMS_FACED.md
+FLOW.md
+DOUBTS.md
