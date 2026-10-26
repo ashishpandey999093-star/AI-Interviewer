@@ -18,6 +18,8 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isMicOn, setIsMicOn] = useState(true);
   const recognitionRef = useRef(null);
   const [isAIPlaying, setIsAIPlaying] = useState(false);
+  const [isAnsweringActive, setIsAnsweringActive] = useState(false);
+
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -156,6 +158,8 @@ function Step2Interview({ interviewData, onFinish }) {
 
         setIsIntroPhase(false)
       } else if (currentQuestion) {
+        setIsAnsweringActive(false);// 👈 1. Keep timer locked while preparing & speaking
+
         await new Promise(r => setTimeout(r, 800));
 
         // If last question (hard level)
@@ -164,6 +168,7 @@ function Step2Interview({ interviewData, onFinish }) {
         }
 
         await speakText(currentQuestion.question);
+        setIsAnsweringActive(true); // 👈 2. START THE TIMER! AI is finished, candidate's turn!
 
       }
 
@@ -175,9 +180,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
 
   useEffect(() => {
-    if (isIntroPhase) return;
-    if (!currentQuestion) return;
-    if (isSubmitting || feedback) return;
+    if (!isAnsweringActive) return; // 👈 That's it!
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -192,7 +195,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
     return () => clearInterval(timer)
 
-  }, [isIntroPhase, isSubmitting, feedback, currentIndex])
+  }, [isAnsweringActive]); // 👈 Only depends on whether answering is active!
 
   useEffect(() => {
     if (!isIntroPhase && currentQuestion) {
@@ -246,6 +249,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
   const submitAnswer = async () => {
     if (isSubmitting) return;
+    setIsAnsweringActive(false); // 👈 Turn off answering timer immediately!
     stopMic()
     setIsSubmitting(true)
 
@@ -268,19 +272,22 @@ function Step2Interview({ interviewData, onFinish }) {
   }
 
   const handleNext = async () => {
+    const nextIndex = currentIndex + 1;
     setAnswer("");
     setFeedback("");
     setSubtitle(""); // 👈 Clears the previous subtitle when moving to the next question!
-    setTimeLeft(0);// 👈 Just to reset the count
+    setIsAnsweringActive(false); // 👈 Keep timer frozen during transition
+    // setTimeLeft(nextIndex);// 👈 Just to reset the count it was a bug
+    setTimeLeft(questions[nextIndex]?.timeLimit || 60);
 
-    if (currentIndex + 1 >= questions.length) {
+    if (nextIndex >= questions.length) {
       finishInterview();
       return;
     }
 
     await speakText("Alright, let's move to the next question.");
 
-    setCurrentIndex(currentIndex + 1);
+    setCurrentIndex(nextIndex);
     setTimeout(() => {
       if (isMicOn) startMic();
     }, 500);
